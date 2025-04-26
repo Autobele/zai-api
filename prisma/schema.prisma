@@ -1,0 +1,256 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Tentant {
+  id               String             @id @unique @default(uuid())
+  name             String
+  status           EnumTenantStatus
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  WhatsApp         WhatsApp[]
+  Contacts         Contacts[]
+  Ticket           Ticket[]
+  User             User[]
+  Messages         Messages[]
+  ApiConfigs       ApiConfigs?
+  ConversationLogs ConversationLogs[]
+  UserAccessLogs   UserAccessLogs[]
+  Queue            Queue[]
+
+  @@map("tenants")
+}
+
+enum EnumTenantStatus {
+  ACTIVE
+  INACTIVE
+}
+
+model User {
+  id           String          @id @unique @default(uuid())
+  name         String
+  email        String          @unique
+  passwordHash String
+  profile      EnumUserProfile @default(OPERATOR)
+  isDeleted    Boolean         @default(false)
+  tenant       Tentant         @relation(fields: [tenantId], references: [id])
+  tenantId     String
+  Ticket       Ticket[]
+
+  verifyEmail           Boolean @default(false)
+  hashNotificationEmail String  @unique @default(uuid())
+
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  Messages         Messages[]
+  ApiConfigs       ApiConfigs?
+  ConversationLogs ConversationLogs[]
+  UserAccessLogs   UserAccessLogs[]
+
+  filas Queue[] @relation("UserQueues")
+  Otp   Otp?
+
+  @@map("users")
+}
+
+model Otp {
+  id        String   @id @unique @default(uuid())
+  otp       String
+  createdAt DateTime @default(now())
+  expiredAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String   @unique
+
+  @@map("otp")
+}
+
+enum EnumUserProfile {
+  ADMIN
+  SUPERVISOR
+  OPERATOR
+}
+
+model WhatsApp {
+  id         String             @id @unique @default(uuid())
+  name       String
+  number     String
+  status     EnumWhatsAppStatus
+  tenant     Tentant            @relation(fields: [tenantId], references: [id])
+  tenantId   String
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+  ApiConfigs ApiConfigs?
+
+  @@map("whatsapps")
+}
+
+enum EnumWhatsAppStatus {
+  DISCONNECT
+  QRCODE
+  CONNECTED
+}
+
+model Contacts {
+  id        String     @id @unique @default(uuid())
+  name      String
+  number    String
+  tenant    Tentant    @relation(fields: [tenantId], references: [id])
+  tenantId  String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  Ticket    Ticket[]
+  Messages  Messages[]
+
+  @@map("contacts")
+}
+
+model Ticket {
+  id        String           @id @unique @default(uuid())
+  status    EnumTicketStatus
+  contact   Contacts         @relation(fields: [contactId], references: [id])
+  contactId String
+
+  tenant   Tentant @relation(fields: [tenantId], references: [id])
+  tenantId String
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  Messages         Messages[]
+  ConversationLogs ConversationLogs[]
+
+  @@map("tickets")
+}
+
+enum EnumTicketStatus {
+  OPEN
+  CLOSED
+  PENDING
+}
+
+model Messages {
+  id        String  @id @unique @default(uuid())
+  body      String
+  ack       Int     @default(0)
+  read      Boolean @default(false)
+  mediaType String
+  mediaUrl  String
+
+  ticket   Ticket @relation(fields: [ticketId], references: [id])
+  ticketId String
+
+  contact   Contacts @relation(fields: [contactId], references: [id])
+  contactId String
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  tenant   Tentant @relation(fields: [tenantId], references: [id])
+  tenantId String
+
+  fromMe    Boolean @default(false)
+  isDeleted Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("messages")
+}
+
+model ApiConfigs {
+  id               String  @id @unique @default(uuid())
+  name             String
+  isActive         Boolean @default(true)
+  token            String
+  urlServiceStatus String
+  urlMessageStatus String
+  authToken        String
+
+  whatsapp   WhatsApp @relation(fields: [whatsappId], references: [id])
+  whatsappId String   @unique
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String @unique
+
+  tenant   Tentant @relation(fields: [tenantId], references: [id])
+  tenantId String  @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("api_configs")
+}
+
+enum EnumUserAccessLogsEventType {
+  LOGIN
+  LOGOUT
+  RESET_REQUEST
+}
+
+model UserAccessLogs {
+  id        String                      @id @unique @default(uuid())
+  eventType EnumUserAccessLogsEventType
+  eventInfo String
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  tenant   Tentant @relation(fields: [tenantId], references: [id])
+  tenantId String
+
+  createdAt DateTime @default(now())
+
+  @@map("user_access_logs")
+}
+
+enum EnumConversationLogsAction {
+  CREATED
+  ATTRIBUTE
+  FINISHED
+}
+
+model ConversationLogs {
+  id          String                     @id @unique @default(uuid())
+  action      EnumConversationLogsAction
+  description String
+
+  ticket   Ticket @relation(fields: [ticketId], references: [id])
+  ticketId String
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  tenant   Tentant @relation(fields: [tenantId], references: [id])
+  tenantId String
+
+  createdAt DateTime @default(now())
+
+  @@map("conversation_logs")
+}
+
+model Queue {
+  id   String @id @unique @default(uuid())
+  name String
+
+  user User[] @relation("UserQueues")
+
+  tenant   Tentant @relation(fields: [tenantId], references: [id])
+  tenantId String
+
+  createdAt DateTime @default(now())
+
+  @@map("queues")
+}
