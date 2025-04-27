@@ -3,7 +3,7 @@ import { EnumTenantStatus } from "../enum/tenant-status.enum"
 import { ApiProperty } from "@nestjs/swagger"
 
 export class CreateTenantDto {
-    @ApiProperty({ example: 'Hikaro Eduardo' })
+    @ApiProperty({ example: 'All Stark' })
     @IsString()
     @IsNotEmpty({ message: 'Nome do tenant é obrigatório' })
     @MinLength(4)
