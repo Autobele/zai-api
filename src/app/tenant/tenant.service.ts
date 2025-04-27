@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { DatabaseService } from 'src/config/database/database.service';
 import { CreateTenantDto } from './dto/create-tenant.dto';
 import { UpdateTenantDto } from './dto/update-tenant.dto';
+import { EnumTenantStatus } from '@prisma/client';
 
 @Injectable()
 export class TenantService {
@@ -21,7 +22,10 @@ export class TenantService {
 
     async create(createTenantDto: CreateTenantDto) {
         return this.databaseService.tentant.create({
-            data: createTenantDto
+            data: {
+                name: createTenantDto.name,
+                status: createTenantDto.status ?? EnumTenantStatus.ACTIVE
+            }
         })
     }
 

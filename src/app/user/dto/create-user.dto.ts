@@ -19,7 +19,7 @@ export class CreateUserDto {
     @IsString()
     @IsNotEmpty({ message: 'Senha é obrigatória' })
     @MinLength(4)
-    readonly passwordHash: string
+    readonly password: string
 
 
     @ApiProperty({ enum: EnumUserProfile })

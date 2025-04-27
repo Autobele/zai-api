@@ -21,9 +21,7 @@ export class UserService {
 
     async create(createUserDto: CreateUserDto) {
         return this.databaseService.user.create({
-            data: {
-                ...createUserDto,
-            }
+            data: createUserDto
         })
     }
 
