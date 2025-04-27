@@ -7,7 +7,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   const configSwagger = new DocumentBuilder()
-    .setTitle('zAI API 1.0')
+    .setTitle('ZAI API 1.0')
     .setDescription('Documentação do Omnichannel ZAI')
     .setVersion('1.0')
     .build()
