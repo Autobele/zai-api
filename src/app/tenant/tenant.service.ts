@@ -1,15 +1,24 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { DatabaseService } from 'src/config/database/database.service';
 import { CreateTenantDto } from './dto/create-tenant.dto';
 import { UpdateTenantDto } from './dto/update-tenant.dto';
-import { EnumTenantStatus } from '@prisma/client';
+import { EnumTenantStatus, User } from '@prisma/client';
+import { RegisterTenantDto } from './dto/register-tenant.dto';
+import { UserService } from '../user/user.service';
+import { EnumUserProfile } from '../user/enum/user-profile.enum';
+import { CreateMemberToTenantDto, CreateUserDto } from '../user/dto/create-user.dto';
+import { UserDefaultResponse } from '../user/response/user-default.response';
 
 @Injectable()
 export class TenantService {
-    constructor(private readonly databaseService: DatabaseService) { }
+    constructor(private readonly databaseService: DatabaseService, private readonly userService: UserService) { }
 
     async findAll() {
-        return this.databaseService.tentant.findMany()
+        return this.databaseService.tentant.findMany({
+            include: {
+                user: true
+            }
+        })
     }
 
     async findOne(tenantId: string) {
@@ -29,6 +38,23 @@ export class TenantService {
         })
     }
 
+    async registerTenant(createTenantWithUser: RegisterTenantDto) {
+        return this.databaseService.$transaction(async () => {
+            const tenant = await this.create({ name: createTenantWithUser.name })
+
+            const createdUser = await this.userService.create({
+                ...createTenantWithUser.user,
+                profile: EnumUserProfile.ADMIN,
+                tenantId: tenant.id
+            })
+
+            return {
+                tenant,
+                user: createdUser
+            }
+        })
+    }
+
     async update(tenantId: string, updatedTenant: UpdateTenantDto) {
         return this.databaseService.tentant.update({
             where: {
@@ -37,4 +63,47 @@ export class TenantService {
             data: updatedTenant
         })
     }
+
+    async addMemberToTenant(currentUser: User, newMember: CreateMemberToTenantDto) {
+        if (currentUser?.profile == 'OPERATOR') {
+            throw new ForbiddenException('Você não tem permissão para realizar esta ação.')
+        }
+
+        if (currentUser?.profile == 'SUPERVISOR' && newMember?.profile == 'ADMIN') {
+            throw new ForbiddenException('Você precisa de elevação para realizar esta ação.')
+        }
+
+        return this.databaseService.$transaction(async () => {
+            const createdUser = await this.userService.create({
+                ...newMember,
+                profile: EnumUserProfile.ADMIN,
+                tenantId: currentUser.tenantId
+            })
+
+            return {
+                user: createdUser
+            }
+        })
+    }
+
+    async listMembers(user: User) {
+        const data = await this.databaseService.tentant.findUnique({
+            where: {
+                id: user.tenantId
+            },
+            include: {
+                user: {
+                    select: {
+                        ...UserDefaultResponse
+                    }
+                }
+            }
+        })
+
+        return {
+            members: data?.user == null ? [] : data?.user
+        }
+    }
+
+
 }

@@ -1,12 +1,15 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { TenantService } from './tenant.service';
-import { CreateTenantDto } from './dto/create-tenant.dto';
-import { EnumTenantStatus } from './enum/tenant-status.enum';
 import { ApiOperation } from '@nestjs/swagger';
+import { RegisterTenantDto } from './dto/register-tenant.dto';
+import { UserService } from '../user/user.service';
+import { CreateMemberToTenantDto } from '../user/dto/create-user.dto';
+import { AuthGuard } from '../guards/auth.guard';
+import { User } from '../decorators/user.decorator';
 
 @Controller('tenant')
 export class TenantController {
-    constructor(private readonly tenantService: TenantService) { }
+    constructor(private readonly tenantService: TenantService, private readonly userService: UserService,) { }
 
     @Get()
     // TODO: ADMIN ROUTE
@@ -17,15 +20,29 @@ export class TenantController {
         return this.tenantService.findAll()
     }
 
-    @Get(':id')
-    findOne() {
-        return true
+    @Post('')
+    @ApiOperation({
+        summary: 'Criar Tenant',
+    })
+    async register(@Body() body: RegisterTenantDto) {
+        this.tenantService.registerTenant(body)
     }
 
-    @Post()
-    create(@Body() createTenantDto: CreateTenantDto) {
-        return this.tenantService.create({
-            name: createTenantDto.name
-        })
+    @UseGuards(AuthGuard)
+    @Post('add-member')
+    @ApiOperation({
+        summary: 'Adicionar membro ao tenant',
+    })
+    async addMember(@User() currentUser, @Body() body: CreateMemberToTenantDto) {
+        this.tenantService.addMemberToTenant(currentUser, body)
+    }
+
+    @UseGuards(AuthGuard)
+    @Get('list-members')
+    @ApiOperation({
+        summary: 'Listar todos os membros do seu tenant',
+    })
+    listMembers(@User() currentUser) {
+        return this.tenantService.listMembers(currentUser)
     }
 }

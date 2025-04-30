@@ -7,9 +7,14 @@ import { TicketModule } from './ticket/ticket.module';
 import { ContactModule } from './contact/contact.module';
 import { WhatsappModule } from './whatsapp/whatsapp.module';
 import { DatabaseModule } from 'src/config/database/database.module';
+import { AuthModule } from './auth/auth.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  imports: [TenantModule, UserModule, TicketModule, ContactModule, WhatsappModule, DatabaseModule],
+  imports: [ConfigModule.forRoot({
+    isGlobal: true,
+    envFilePath: '.env',
+  }), TenantModule, UserModule, TicketModule, ContactModule, WhatsappModule, DatabaseModule, AuthModule],
   controllers: [AppController],
   providers: [AppService],
 })

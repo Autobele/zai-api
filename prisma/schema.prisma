@@ -19,15 +19,15 @@ model Tentant {
   status           EnumTenantStatus?  @default(ACTIVE)
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
-  WhatsApp         WhatsApp[]
-  Contacts         Contacts[]
-  Ticket           Ticket[]
-  User             User[]
-  Messages         Messages[]
-  ApiConfigs       ApiConfigs?
-  ConversationLogs ConversationLogs[]
-  UserAccessLogs   UserAccessLogs[]
-  Queue            Queue[]
+  whatsApp         WhatsApp[]
+  contacts         Contacts[]
+  ticket           Ticket[]
+  user             User[]
+  messages         Messages[]
+  apiConfigs       ApiConfigs?
+  conversationLogs ConversationLogs[]
+  userAccessLogs   UserAccessLogs[]
+  queue            Queue[]
 
   @@map("tenants")
 }
@@ -46,17 +46,17 @@ model User {
   isDeleted Boolean         @default(false)
   tenant    Tentant         @relation(fields: [tenantId], references: [id])
   tenantId  String
-  Ticket    Ticket[]
+  ticket    Ticket[]
 
   verifyEmail           Boolean @default(false)
   hashNotificationEmail String  @unique @default(uuid())
 
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
-  Messages         Messages[]
-  ApiConfigs       ApiConfigs?
-  ConversationLogs ConversationLogs[]
-  UserAccessLogs   UserAccessLogs[]
+  messages         Messages[]
+  apiConfigs       ApiConfigs?
+  conversationLogs ConversationLogs[]
+  userAccessLogs   UserAccessLogs[]
 
   filas        Queue[]   @relation("UserQueues")
   otp          String?
@@ -80,7 +80,7 @@ model WhatsApp {
   tenantId   String
   createdAt  DateTime           @default(now())
   updatedAt  DateTime           @updatedAt
-  ApiConfigs ApiConfigs?
+  apiConfigs ApiConfigs?
 
   @@map("whatsapps")
 }
@@ -99,8 +99,8 @@ model Contacts {
   tenantId  String
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
-  Ticket    Ticket[]
-  Messages  Messages[]
+  ticket    Ticket[]
+  messages  Messages[]
 
   @@map("contacts")
 }
@@ -119,8 +119,8 @@ model Ticket {
 
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
-  Messages         Messages[]
-  ConversationLogs ConversationLogs[]
+  messages         Messages[]
+  conversationLogs ConversationLogs[]
 
   @@map("tickets")
 }

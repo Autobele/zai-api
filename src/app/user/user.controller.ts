@@ -1,7 +1,13 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
+import { ApiTags } from '@nestjs/swagger';
+import { ValidateEmailParamDto } from './dto/validate-email-param.dto';
+import { ValidateEmailBodyDto } from './dto/validate-email-body.dto';
+import { AuthGuard } from '../guards/auth.guard';
+import { User } from '../decorators/user.decorator';
 
+@ApiTags('User')
 @Controller('user')
 export class UserController {
     constructor(private readonly userService: UserService) { }
@@ -14,4 +20,21 @@ export class UserController {
     create(@Body() createUserDto: CreateUserDto) {
         return this.userService.create(createUserDto)
     }
+
+    @Put('validar-email/:hashNotificationEmail')
+    async validateEmail(@Param() { hashNotificationEmail }: ValidateEmailParamDto, @Body() { otpCode }: ValidateEmailBodyDto) {
+        this.userService.validateEmail(hashNotificationEmail, otpCode)
+    }
+
+
+    @UseGuards(AuthGuard)
+    @Get('me')
+    async me(@User() user) {
+        return { user };
+    }
+
+    // @Put('resend-otp/:hashNotificationEmail')
+    // async resendOtp(@Param() hashNotificationEmail, @Body() otpCode) {
+    //     const hashNotificationEmailExist = await 
+    // }
 }

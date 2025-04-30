@@ -1,5 +1,5 @@
-import { IsEmpty, IsEnum, IsNotEmpty, IsOptional, IsString, MaxLength, MinLength } from "class-validator"
-import { ApiProperty } from "@nestjs/swagger"
+import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, Matches, MinLength } from "class-validator"
+import { ApiProperty, OmitType } from "@nestjs/swagger"
 import { EnumUserProfile } from "../enum/user-profile.enum"
 
 export class CreateUserDto {
@@ -10,26 +10,38 @@ export class CreateUserDto {
     readonly name: string
 
     @ApiProperty({ example: 'hikaro.eduardo@allstart.com.br' })
-    @IsString()
+    @IsEmail()
     @IsNotEmpty({ message: 'Email é obrigatório' })
-    @MinLength(4)
     readonly email: string
 
-    @ApiProperty({ example: 'fh6yx3]Ly88V' })
+    @ApiProperty({ example: 'Zai@12345678' })
     @IsString()
     @IsNotEmpty({ message: 'Senha é obrigatória' })
-    @MinLength(4)
+    @Matches(
+        /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])[A-Za-z\d!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]{8,}$/,
+        {
+            message:
+                'A senha deve ter no mínimo 8 caracteres, com pelo menos uma letra maiúscula, um número e um símbolo.',
+        },
+    )
     readonly password: string
 
 
     @ApiProperty({ enum: EnumUserProfile })
-    @IsOptional()
     @IsEnum(EnumUserProfile)
-    readonly profile?: EnumUserProfile
+    readonly profile: EnumUserProfile
 
     @ApiProperty({ example: '1f7c986a-7bc5-4e52-a2f7-c9ccba7dd54a' })
     @IsString()
     @IsNotEmpty({ message: 'Tenant UUID é obrigatório' })
-    @MinLength(4)
     readonly tenantId: string
 }
+
+export class CreateUserDtoWithoutTenant extends OmitType(CreateUserDto, ['tenantId', 'profile'] as const) { }
+export class CreateMemberToTenantDto extends OmitType(CreateUserDto, ['tenantId'] as const) { }
+
+// export class CreateTenantMemberDTO extends CreateUserDto {
+//     @ApiProperty({ enum: EnumUserProfile })
+//     @IsEnum(EnumUserProfile)
+//     readonly profile: EnumUserProfile
+// }
