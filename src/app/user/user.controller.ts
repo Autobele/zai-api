@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { ValidateEmailParamDto } from './dto/validate-email-param.dto';
 import { ValidateEmailBodyDto } from './dto/validate-email-body.dto';
 import { AuthGuard } from '../guards/auth.guard';
@@ -26,15 +26,10 @@ export class UserController {
         this.userService.validateEmail(hashNotificationEmail, otpCode)
     }
 
-
     @UseGuards(AuthGuard)
     @Get('me')
+    @ApiBearerAuth()
     async me(@User() user) {
         return { user };
     }
-
-    // @Put('resend-otp/:hashNotificationEmail')
-    // async resendOtp(@Param() hashNotificationEmail, @Body() otpCode) {
-    //     const hashNotificationEmailExist = await 
-    // }
 }

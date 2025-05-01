@@ -39,9 +39,3 @@ export class CreateUserDto {
 
 export class CreateUserDtoWithoutTenant extends OmitType(CreateUserDto, ['tenantId', 'profile'] as const) { }
 export class CreateMemberToTenantDto extends OmitType(CreateUserDto, ['tenantId'] as const) { }
-
-// export class CreateTenantMemberDTO extends CreateUserDto {
-//     @ApiProperty({ enum: EnumUserProfile })
-//     @IsEnum(EnumUserProfile)
-//     readonly profile: EnumUserProfile
-// }

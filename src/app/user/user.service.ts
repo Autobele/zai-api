@@ -1,5 +1,6 @@
+import * as bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from 'src/config/database/database.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -30,20 +31,31 @@ export class UserService {
     }
 
     async create(createUserDto: CreateUserDto) {
-        const userAlreadyExist = await this.findByEmail(createUserDto.email)
+        try {
+            const userAlreadyExist = await this.findByEmail(createUserDto.email)
 
-        if (userAlreadyExist) {
-            throw new ConflictException('E-mail já está em uso.')
-        }
-
-        return this.databaseService.user.create({
-            data: {
-                ...createUserDto,
-                hashNotificationEmail: uuidv4(),
-                otp: this.generateNumericOTP(),
-                otpCreatedAt: new Date()
+            if (userAlreadyExist) {
+                throw new ConflictException('E-mail já está em uso.')
             }
-        })
+
+            const salt = await bcrypt.genSalt();
+            const hashedPassword = await bcrypt.hash(createUserDto.password, salt);
+
+            return this.databaseService.user.create({
+                data: {
+                    ...createUserDto,
+                    hashNotificationEmail: uuidv4(),
+                    otp: this.generateNumericOTP(),
+                    password: hashedPassword,
+                    otpCreatedAt: new Date()
+                }
+            })
+        } catch (error) {
+            if (error instanceof ConflictException) {
+                throw error;
+            }
+            throw new InternalServerErrorException('Erro ao criar usuário.');
+        }
     }
 
     async update(userId: string, updatedUsetDto: UpdateUserDto) {

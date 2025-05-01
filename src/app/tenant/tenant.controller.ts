@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { TenantService } from './tenant.service';
-import { ApiOperation } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { RegisterTenantDto } from './dto/register-tenant.dto';
 import { UserService } from '../user/user.service';
 import { CreateMemberToTenantDto } from '../user/dto/create-user.dto';
@@ -30,6 +30,7 @@ export class TenantController {
 
     @UseGuards(AuthGuard)
     @Post('add-member')
+    @ApiBearerAuth()
     @ApiOperation({
         summary: 'Adicionar membro ao tenant',
     })
@@ -39,6 +40,7 @@ export class TenantController {
 
     @UseGuards(AuthGuard)
     @Get('list-members')
+    @ApiBearerAuth()
     @ApiOperation({
         summary: 'Listar todos os membros do seu tenant',
     })

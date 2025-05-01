@@ -1,6 +1,6 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { DatabaseService } from 'src/config/database/database.service';
-import { CreateTenantDto } from './dto/create-tenant.dto';
+import { CreateTenantDTO } from './dto/create-tenant.dto';
 import { UpdateTenantDto } from './dto/update-tenant.dto';
 import { EnumTenantStatus, User } from '@prisma/client';
 import { RegisterTenantDto } from './dto/register-tenant.dto';
@@ -16,7 +16,14 @@ export class TenantService {
     async findAll() {
         return this.databaseService.tentant.findMany({
             include: {
-                user: true
+                user: true,
+                queue: {
+                    select: {
+                        id: true,
+                        name: true,
+                        user: true
+                    },
+                }
             }
         })
     }
@@ -29,11 +36,11 @@ export class TenantService {
         })
     }
 
-    async create(createTenantDto: CreateTenantDto) {
+    async create(CreateTenantDTO: CreateTenantDTO) {
         return this.databaseService.tentant.create({
             data: {
-                name: createTenantDto.name,
-                status: createTenantDto.status ?? EnumTenantStatus.ACTIVE
+                name: CreateTenantDTO.name,
+                status: CreateTenantDTO.status ?? EnumTenantStatus.ACTIVE
             }
         })
     }
@@ -87,23 +94,17 @@ export class TenantService {
     }
 
     async listMembers(user: User) {
-        const data = await this.databaseService.tentant.findUnique({
+        const data = await this.databaseService.user.findMany({
             where: {
-                id: user.tenantId
+                tenantId: user.tenantId
             },
-            include: {
-                user: {
-                    select: {
-                        ...UserDefaultResponse
-                    }
-                }
+            select: {
+                ...UserDefaultResponse,
+                profile: true
             }
         })
 
-        return {
-            members: data?.user == null ? [] : data?.user
-        }
+        return data
     }
-
 
 }

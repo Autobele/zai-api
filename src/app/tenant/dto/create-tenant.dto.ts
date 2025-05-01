@@ -2,7 +2,7 @@ import { IsEmpty, IsEnum, IsNotEmpty, IsOptional, IsString, MaxLength, MinLength
 import { EnumTenantStatus } from "../enum/tenant-status.enum"
 import { ApiProperty } from "@nestjs/swagger"
 
-export class CreateTenantDto {
+export class CreateTenantDTO {
     @ApiProperty({ example: 'All Stark' })
     @IsString()
     @IsNotEmpty({ message: 'Nome do tenant é obrigatório' })

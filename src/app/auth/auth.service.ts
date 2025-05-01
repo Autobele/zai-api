@@ -1,3 +1,4 @@
+import * as bcrypt from 'bcrypt';
 import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { User } from '@prisma/client';
@@ -49,11 +50,16 @@ export class AuthService {
         const user = await this.databaseService.user.findFirst({
             where: {
                 email,
-                password,
             },
         });
 
         if (!user) {
+            throw new UnauthorizedException('Email e/ou senha incorretos');
+        }
+
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+
+        if (!isPasswordValid) {
             throw new UnauthorizedException('Email e/ou senha incorretos');
         }
 
