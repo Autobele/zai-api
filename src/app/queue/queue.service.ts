@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable } from '@nestjs/common';
 import { DatabaseService } from 'src/config/database/database.service';
 import { User } from '@prisma/client';
 import { UserDefaultResponse } from '../user/response/user-default.response';
@@ -10,7 +10,9 @@ export class QueueService {
 
     async findAll() {
         return this.databaseService.queue.findMany({
-            include: {
+            select: {
+                id: true,
+                name: true,
                 user: {
                     select: {
                         ...UserDefaultResponse
@@ -24,6 +26,15 @@ export class QueueService {
         return this.databaseService.queue.findUnique({
             where: {
                 id: queueId
+            },
+            select: {
+                id: true,
+                name: true,
+                user: {
+                    select: {
+                        ...UserDefaultResponse
+                    }
+                }
             }
         })
     }
@@ -47,9 +58,22 @@ export class QueueService {
     }
 
     async createWithTenant(currentUser: User, name: string) {
-        const userHasPermission = await this.checkUserHasPermision(currentUser, currentUser.tenantId)
+        await this.checkUserHasPermision(currentUser, currentUser.tenantId)
 
-        if (!userHasPermission) return
+        const queueAlreadyExists = await this.databaseService.queue.findFirst({
+            where: {
+                name,
+                tenantId: currentUser.tenantId
+            }
+        })
+
+        if (queueAlreadyExists) {
+            throw new ConflictException({
+                statusCode: 409,
+                message: 'Tenant já possui uma fila com este nome.',
+                error: 'Conflict'
+            });
+        }
 
         return this.databaseService.queue.create({
             data: {
@@ -59,4 +83,60 @@ export class QueueService {
         })
     }
 
+    async listAllMembers(queueId: string) {
+        return this.databaseService.queue.findUnique({
+            where: {
+                id: queueId
+            },
+            select: {
+                id: true,
+                name: true,
+                user: {
+                    select: {
+                        ...UserDefaultResponse
+                    }
+                }
+            }
+        })
+    }
+
+    async listMemberStatusQueue(currentUser: User, queueId: string) {
+        await this.checkUserHasPermision(currentUser, currentUser.tenantId)
+        const users = await this.databaseService.user.findMany({
+            where: {
+                AND: [
+                    {
+                        tenantId: currentUser.tenantId
+                    },
+                ]
+            },
+            select: {
+                id: true,
+                name: true,
+                filas: true
+            }
+        })
+        return users.map((user) => {
+            return {
+                id: user.id,
+                name: user.name,
+                isInQueue: user.filas.filter(filaId => filaId.id == queueId).length > 0 ? true : false,
+            }
+        })
+    }
+
+    async addMembers(currentUser: User, queueId: string, usersId: string[]) {
+        await this.checkUserHasPermision(currentUser, currentUser.tenantId)
+
+        return this.databaseService.queue.update({
+            where: {
+                id: queueId
+            },
+            data: {
+                user: {
+                    set: usersId.map((userId) => ({ id: userId }))
+                }
+            }
+        })
+    }
 }

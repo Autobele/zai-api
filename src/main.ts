@@ -9,11 +9,20 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const reflector = new Reflector();
 
+  app.enableCors({
+    origin: '*',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    allowedHeaders: 'Content-Type, Accept, Authorization',
+    credentials: true,
+  });
+
+
   const configSwagger = new DocumentBuilder()
     .setTitle('ZAI API 1.0')
     .setDescription('Documentação do Omnichannel ZAI')
     .setVersion('1.0')
     .addBearerAuth()
+    .addServer('http://localhost:' + (process.env.PORT ?? 3000))
     .build()
 
   const documentSwagger = () => SwaggerModule.createDocument(app, configSwagger)

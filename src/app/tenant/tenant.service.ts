@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable } from '@nestjs/common';
 import { DatabaseService } from 'src/config/database/database.service';
 import { CreateTenantDTO } from './dto/create-tenant.dto';
 import { UpdateTenantDto } from './dto/update-tenant.dto';
@@ -46,19 +46,26 @@ export class TenantService {
     }
 
     async registerTenant(createTenantWithUser: RegisterTenantDto) {
-        return this.databaseService.$transaction(async () => {
+        const userAlreadyExist = await this.userService.findByEmail(createTenantWithUser.user.email)
+        if (userAlreadyExist) {
+            throw new ConflictException({
+                statusCode: 409,
+                message: 'E-mail já está em uso.',
+                error: 'Conflict'
+            });
+        }
+        await this.databaseService.$transaction(async () => {
             const tenant = await this.create({ name: createTenantWithUser.name })
-
             const createdUser = await this.userService.create({
                 ...createTenantWithUser.user,
                 profile: EnumUserProfile.ADMIN,
                 tenantId: tenant.id
             })
-
             return {
                 tenant,
                 user: createdUser
             }
+
         })
     }
 
@@ -72,24 +79,20 @@ export class TenantService {
     }
 
     async addMemberToTenant(currentUser: User, newMember: CreateMemberToTenantDto) {
-        if (currentUser?.profile == 'OPERATOR') {
+        if (currentUser?.profile == EnumUserProfile.OPERATOR) {
             throw new ForbiddenException('Você não tem permissão para realizar esta ação.')
         }
 
-        if (currentUser?.profile == 'SUPERVISOR' && newMember?.profile == 'ADMIN') {
+        if (currentUser?.profile == EnumUserProfile.SUPERVISOR && newMember?.profile == EnumUserProfile.ADMIN) {
             throw new ForbiddenException('Você precisa de elevação para realizar esta ação.')
         }
 
         return this.databaseService.$transaction(async () => {
-            const createdUser = await this.userService.create({
+            await this.userService.create({
                 ...newMember,
                 profile: EnumUserProfile.ADMIN,
                 tenantId: currentUser.tenantId
             })
-
-            return {
-                user: createdUser
-            }
         })
     }
 

@@ -35,13 +35,17 @@ export class UserService {
             const userAlreadyExist = await this.findByEmail(createUserDto.email)
 
             if (userAlreadyExist) {
-                throw new ConflictException('E-mail já está em uso.')
+                throw new ConflictException({
+                    statusCode: 409,
+                    message: 'E-mail já está em uso.',
+                    error: 'Conflict'
+                })
             }
 
             const salt = await bcrypt.genSalt();
             const hashedPassword = await bcrypt.hash(createUserDto.password, salt);
 
-            return this.databaseService.user.create({
+            return await this.databaseService.user.create({
                 data: {
                     ...createUserDto,
                     hashNotificationEmail: uuidv4(),

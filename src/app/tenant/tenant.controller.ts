@@ -25,7 +25,7 @@ export class TenantController {
         summary: 'Criar Tenant',
     })
     async register(@Body() body: RegisterTenantDto) {
-        this.tenantService.registerTenant(body)
+        return this.tenantService.registerTenant(body)
     }
 
     @UseGuards(AuthGuard)
@@ -35,7 +35,7 @@ export class TenantController {
         summary: 'Adicionar membro ao tenant',
     })
     async addMember(@User() currentUser, @Body() body: CreateMemberToTenantDto) {
-        this.tenantService.addMemberToTenant(currentUser, body)
+        return this.tenantService.addMemberToTenant(currentUser, body)
     }
 
     @UseGuards(AuthGuard)
